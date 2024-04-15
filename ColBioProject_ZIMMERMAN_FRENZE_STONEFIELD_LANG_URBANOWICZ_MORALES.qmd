@@ -187,3 +187,24 @@ xlim(-130, -65) +
 ### Urbanowicz
 
 ### Morales
+```{r}
+ICLEVEL <- merged_data |>
+select(UNITID, INSTNM, mean_species_richness, ICLEVEL) |>
+  mutate(ICLEVEL = case_when(
+    ICLEVEL == 1 ~ "4-or-more-year",
+    ICLEVEL == 2 ~ "2-year"
+  ))
+ICLEVEL |>
+  ggplot(aes(x =ICLEVEL, y = mean_species_richness)) +
+  geom_boxplot(aes(fill = ICLEVEL)) +
+  labs(title = "Mean Species Richness of 4-or-more years and 2-year Institution",
+  x = "Institution Level",
+  y = "Mean Species richness") +
+  theme_minimal() +
+  scale_fill_manual(values = c("4-or-more-year" = "purple", "2-year" = "pink"))
+```  
+Hypothesis: Exploring the relationship between institution level and species richness.
+
+The hypothesis that i want to test is that if there is relationship between the species richness and the institution  level. Since institutions often vary in size, location and influence they may have different footprints and may impact the local biodiversities from their surrounding environment. 
+When we look at additional factors such as impervious surfaces and taxonomic order it can definitively change the result and might even provide a more clear understanding of the relationship between the species tichness and the institution level
+
