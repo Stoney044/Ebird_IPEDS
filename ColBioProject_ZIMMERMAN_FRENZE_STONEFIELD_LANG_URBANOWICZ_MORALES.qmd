@@ -7,8 +7,10 @@ editor: visual
 ## Load Packages
 
 ```{r}
-# Everyone as needed:
 library(tidyverse)
+library(maps)
+library(viridis)
+library(ggthemes)
 ```
 
 ## Load Data
@@ -19,13 +21,21 @@ library(tidyverse)
 
 EB_url <- "https://raw.githubusercontent.com/Stoney044/Ebird_IPEDS/main/EBbird.csv"
 IP_url <- "https://raw.githubusercontent.com/Stoney044/Ebird_IPEDS/main/IPEDS.csv"
+metadata_url <- "https://raw.githubusercontent.com/Stoney044/Ebird_IPEDS/main/IPEDS_Metadata.csv"
+
 
 # Load the data
 Ebird <- read_csv(EB_url)
 IPEDS <- read_csv(IP_url)
+metadata <- read.csv(metadata_url) 
+```
+
+```{r}
+#| eval: false
 
 # Clean Metadata
 # Ian
+
 metadata <- metadata |>
   select(varTitle, varName) 
 
@@ -78,9 +88,9 @@ merged_data <- IPEDS |>
 
 ### Hypothesis (4a)
 
-There will be less richness with more impervious surface because these surfaces cannot provide the resources birds need to survive.
+There will be less species richness with increased impervious due to destruction of natural habitat, reduced green space, and decreased resources, such as food.
 
-### Relationship Across Colleges (4b)
+### Richness vs Impervious Surface Across Colleges (4b)
 
 ```{r}
 # Lee
@@ -88,31 +98,34 @@ There will be less richness with more impervious surface because these surfaces 
 merged_data |>
   group_by(UNITID) |> 
   ggplot(aes(x = mean_impervious, y = mean_species_richness)) +
-  geom_smooth(se = FALSE)
+  geom_smooth(se = FALSE) + 
+  labs(x = "Mean Impervious Surface", y = "Mean Species Richness")
   
 merged_data |>
   group_by(UNITID) |> 
   ggplot(aes(x = log(mean_impervious), y = mean_species_richness)) +
-  geom_smooth(se = FALSE)  
+  geom_smooth(se = FALSE) + 
+  labs(x = "Log(Mean Impervious Surface)", y = "Mean Species Richness") 
 
 merged_data |>
   group_by(UNITID) |> 
   ggplot(aes(x = mean_impervious, y = log(mean_species_richness))) +
-  geom_smooth(se = FALSE)
+  geom_smooth(se = FALSE) + 
+  labs(x = "Mean Impervious Surface", y = "Log(Mean Species Richness)")
 
 merged_data |>
   group_by(UNITID) |> 
   ggplot(aes(x = log(mean_impervious), y = log(mean_species_richness))) +
-  geom_smooth(se = FALSE)
+  geom_smooth(se = FALSE) + 
+  labs(x = "Log(Mean Impervious Surface", y = "Log(Mean Species Richness)")
 
 ```
 
 ### Mechanism (4c)
 
-Mostly stable then dips, implies that there is a threshold of impervious surface that is okay before it causes problems.
+The curves are mostly stable before they quickly decrease, which implies that there is a threshold of impervious surface that is okay before it causes problems.
 
 ### By Taxonomic Order (4d)
-
 
 ```{r}
 # Lee
@@ -133,17 +146,75 @@ Ebird |>
 
 ### Zimmerman
 
-### Frenze
+#### Tuition & Fees
+
+A more expensive institution may have more opportunities for species richness due to funding opportunities for natural development. However, this higher price may also imply more impervious surface, which is not ideal for species richness, as the money students pay may be funding impervious development, such as academic buidings and roads.
+
+```{r}
+#| label: A 
+
+# Calculate mean tuition
+Tuition <- Ebird |> 
+  group_by(UNITID, ORDER) |> 
+  mutate(species_count = n_distinct(`SCIENTIFIC NAME`)) |> 
+  group_by(UNITID, ORDER) |> 
+  summarise(mean_species_richness = mean(species_count, na.rm = TRUE)) |> 
+  right_join(IPEDS) |>
+  select(UNITID, TUFEYR0, TUFEYR1, TUFEYR2, TUFEYR3, ORDER, mean_species_richness, mean_impervious) |> 
+  group_by(UNITID, mean_species_richness) |>
+  mutate(
+    mean_tuition = mean(c(TUFEYR0, TUFEYR1, TUFEYR2, TUFEYR3))
+  )
+
+# Plot mean tuition by mean species richness
+
+Tuition |> 
+  ggplot(aes(x = mean_tuition, y = mean_species_richness)) +
+  geom_smooth(se = FALSE) +
+  labs(
+    x = "Annual Tuition & Fees",
+    y = "Mean Species Richness",
+    title = "Mean Species Richness by Tuition & Fees"
+  )
+
+```
+
+```{r}
+#| label: mean impervious surface
+
+Tuition |> 
+  ggplot(aes(x = mean_tuition, y = mean_impervious)) +
+  geom_smooth(se = FALSE) +
+  labs(
+    x = "Annual Tuition",
+    y = "Mean Impervious Surface",
+    title = "Mean Impervious Surface by Annual Tuition"
+  )
+
+```
+
+```{r}
+#| label: by taxonomic order
+#| warning: false
+
+Tuition |> 
+  group_by(mean_tuition, ORDER) |> 
+  ggplot(aes(x = mean_tuition, y = mean_species_richness)) +
+  geom_smooth(se = FALSE) +
+  labs(
+    x = "Annual Tuition & Fees",
+    y = "Mean Species Richness",
+    title = "Mean Species Richness by Tuition & Fees per Order"
+  ) +
+  facet_wrap(~ORDER, scales = "free_y")
+
+```
 
 ### Stonefield
 
-#### Mean Species Richness based on Institution's Land Grant Status: 
-
-Hypothesis: Land grant universities were established due to a grant program from the federal government to teach agriculture, military tactics, and the mechanic arts as well as classical studies so members of the working classes could obtain a liberal, practical education. Due to this, Land grant universities tend to be in more rural areas, therefor should have a higher mean species richness.
+#### Land Grant Status
 
 ```{r}
-#| label: Land Grant Status
-#| warning: false
 land_grant_SR <- merged_data |> 
   select(UNITID, INSTNM, mean_species_richness, LANDGRNT)|>
   filter(is.na(mean_species_richness) == FALSE) |>
@@ -160,39 +231,10 @@ land_grant_SR |>
 
 ```
 
-Impervious surfaces may be more prevalent on non-land-grant institutions so this may be a factor in these results. Taxonomic order breakdown is shown below.
-
-```{r}
-#| label: by taxonomic order
-#| warning: false
-# Faceted by Order
-
-mean_species_richness <- species_richness |> 
-  group_by(UNITID, ORDER) |> 
-  summarise(mean_species_richness = mean(species_count, na.rm = TRUE))
-
-merged_data <- IPEDS |> 
-  left_join(mean_species_richness)
-
-land_grant_SR <- merged_data |> 
-  select(UNITID, INSTNM, mean_species_richness, LANDGRNT, ORDER)|>
-  filter(is.na(mean_species_richness) == FALSE) |>
-  mutate(LANDGRNT = ifelse(LANDGRNT == 1, "Land Grant", "Not")) |> 
-  filter(!is.na(ORDER))
-
-land_grant_SR |>
-  group_by(ORDER) |>
-  ggplot(aes(x = LANDGRNT, y = mean_species_richness)) +
-  geom_boxplot(aes(fill = LANDGRNT)) +
-  labs(title = "Mean Species Richness of Land Grant Universities",
-       x = "Land Grant Status",
-       y = "Mean Species Richness") +
-  theme_minimal() +
-  scale_fill_manual(values = c("Land Grant" = "green", "Not" = "skyblue2")) +
-  facet_wrap(~ORDER)
-```
-
 ### Lang
+
+#### City
+
 ```{r}
 species_richness <- Ebird |>
   group_by(UNITID, `SAMPLING EVENT IDENTIFIER`) |>
@@ -202,11 +244,10 @@ mean_species_richness <- species_richness |>
   summarise(mean_species_richness = mean(species_count, na.rm = TRUE))
 merged_data <- IPEDS |>
   left_join(mean_species_richness)
+```
 
-library(tidyverse)
-library(maps)
-library(viridis)
-library(ggthemes)
+
+```{r}
 # Load the US state map data
 us <- map_data("state")
 lat_long <- merged_data |>
@@ -239,9 +280,49 @@ xlim(-130, -65) +
 
 4c: when accounting for impervious surface, it could change these results as the urbanization of college campuses could also have a negative effect on bird species richness. Examining taxonomic order can also affect the species richness depending on if certain groups are more or less affected by the urban college campuses
 
+
 ### Urbanowicz
 
+#### LOCALE
+
+```{r}
+filtered_data <- merged_data |>
+drop_na(LOCALE, mean_species_richness)
+
+ggplot(filtered_data, aes(x = LOCALE, y = mean_species_richness)) +
+geom_jitter(width = 0.3, height = 0, alpha = 0.6) +  
+labs(x = "Locale", y = "Bird Species Richness", title = "Bird Species Richness by Urbanization") +
+theme_minimal()
+```
+
+#### What is the hypothesis that you are testing? What is the reason that it makes sense to look at the hypothesis?
+
+As the degree of urbanization increases, bird species richness decreases resulting in a negative relationship. It is important to look at the effects of urbanization in terms of bird species richness because of its drastic habitat alteration, negative impact on bird species and the resulting ecological responses, and research implications. An increase in LOCALE may result in situations such as deforestation and fragmentation of local habitats which leads to a loss of suitable habitats for different bird species. Urbanization may also reduce different resources for birds such as nesting sites and food; however, even if certain birds may be able to adapt to human development, it may lead to competition with invasive species lessening the likelihood of a diverse bird population. Studying different levels of urbanization may also give insight into human environmental changes and its effects on wildlife which could be helpful in terms of conservation efforts. Finally, it could contribute to different research which could help in creating policies for conservation and a more sustainable way of building urban environments. #Does accounting for impervious surface or taxonomic order change your results Accounting for impervious surfaces may help control for the effects of habitat alteration and urban development on bird species richness and has the ability to provide a better understanding of the impact of urbanization on bird diversity. In regards to taxonomic order, it can reveal how different bird groups respond to urbanization, specifically how it can help identify specific groups that are more sensitive or tolerant to urbanization pressures.
+
+```{r}
+#In regards to impervious surfaces:
+ggplot(filtered_data, aes(x = LOCALE, y = mean_species_richness, color = mean_impervious)) +
+geom_jitter(width = 0.3, height = 0, alpha = 0.6) +  
+labs(x = "Locale", y = "Bird Species Richness", title = "Bird Species Richness by Urbanization") +
+theme_minimal()
+
+```
+
+```{r}
+#In regards to taxonomic order:
+ordermerged_data <- merge(filtered_data, Ebird, by = "UNITID", all.x = TRUE)
+ggplot(ordermerged_data, aes(x = LOCALE, y = mean_species_richness)) +
+geom_jitter(width = 0.3, height = 0, alpha = 0.6) +  
+labs(x = "Locale", y = "Bird Species Richness", title = "Bird Species Richness by Urbanization") +
+theme_minimal() +
+facet_wrap(~ ORDER, scales = "free_y")
+
+```
+
 ### Morales
+
+#### Level of institution
+
 ```{r}
 ICLEVEL <- merged_data |>
 select(UNITID, INSTNM, mean_species_richness, ICLEVEL) |>
@@ -257,9 +338,49 @@ ICLEVEL |>
   y = "Mean Species richness") +
   theme_minimal() +
   scale_fill_manual(values = c("4-or-more-year" = "purple", "2-year" = "pink"))
-```  
+```
+
 Hypothesis: Exploring the relationship between institution level and species richness.
 
-The hypothesis that i want to test is that if there is relationship between the species richness and the institution  level. Since institutions often vary in size, location and influence they may have different footprints and may impact the local biodiversities from their surrounding environment. 
+The hypothesis that i want to test is that if there is relationship between the species richness and the institution level. Since institutions often vary in size, location and influence they may have different footprints and may impact the local biodiversities from their surrounding environment. When we look at additional factors such as impervious surfaces and taxonomic order it can definitively change the result and might even provide a more clear understanding of the relationship between the species richness and the institution level
+
+### Frenze
+
+#### EFUG enrollment
+
+```{r}
+
+merged_data_NF <- merged_data |>
+  select(INSTNM, INSTSIZE, ENRTOT, mean_impervious, mean_species_richness)|>
+  filter(!is.na(mean_species_richness))|>
+  filter(!is.na(ENRTOT))|>
+  mutate(INSTSIZE = factor(INSTSIZE))
+
+Enrollment_range <- c("Under 1,000", "1,000-5,000", "5,000-10,000", "10,000-20,000", "20,000+")
+
+plot_1NF <- ggplot(data = merged_data_NF) +
+  geom_boxplot(aes(x = INSTSIZE, y = mean_species_richness, color = INSTSIZE)) +
+  labs(x = "Institutation Size", y = "Mean Species Richness", color = "Number of Students Enrolled") + 
+  theme(legend.position = "bottom") +
+  scale_color_discrete(labels = Enrollment_range)  
+
+species_richness_per_enrollment <- merged_data_NF |>
+  mutate(
+  Species_richness_per_student = mean_species_richness/ENRTOT,
+  .keep = "all"
+)
+
+plot_2NF <- ggplot(data = species_richness_per_enrollment) +
+  geom_boxplot(aes(x = INSTSIZE, y = Species_richness_per_student, color = INSTSIZE)) +
+  labs(x = "Institutation Size", y = "Mean Species Richness per Student", color = "Number of Students Enrolled") + 
+  theme(legend.position = "none") +
+  scale_color_discrete(labels = Enrollment_range) 
+
+plot_1NF  
+plot_2NF
+```
+
+There is no apparent correlation between the average impervious surface or institution size. This data set suggest there is little correlation between institution size and species richness. \# However it should be noted that seeing that even the smaller institution sizes have equitable species richness the larger ones which would logically require a larger campuses on average. This could indicate that smaller institutions may have higher species richness per square mile and with additional data pertaining to the each individual campuses area further analysis can be done.
+
 When we look at additional factors such as impervious surfaces and taxonomic order it can definitively change the result and might even provide a more clear understanding of the relationship between the species tichness and the institution level
 
