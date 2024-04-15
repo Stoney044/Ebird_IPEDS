@@ -138,7 +138,7 @@ Ebird |>
 ### Stonefield
 
 ### Lang
-
+```{r}
 species_richness <- Ebird |>
   group_by(UNITID, `SAMPLING EVENT IDENTIFIER`) |>
   mutate(species_count = n_distinct(`SCIENTIFIC NAME`))
@@ -178,20 +178,11 @@ xlim(-130, -65) +
     axis.ticks = element_blank(), 
     axis.title = element_blank() 
   )
+```
 
+4b: Hypothesis is that larger cities have an increase bird species richness. Larger cities may have more resources and varied habitats, such as parks and green spaces, which can support a greater diversity of bird species with more habitats and more variety. 
 
-# 4b: Hypothesis is that larger cities have an increase bird
-# species richness. Larger cities may have more resources and
-# varied habitats, such as parks and green spaces, which can
-# support a greater diversity of bird species with more habitats
-# and more variety. 
-
-# 4c: when accounting for impervious surface, it could change these 
-# results as the urbanization of college campuses could also have 
-# a negative effect on bird species richness. Examining taxonomic 
-# order can also affect the species richness depending on if 
-# certain groups are more or less affected by the urban college
-# campuses
+4c: when accounting for impervious surface, it could change these results as the urbanization of college campuses could also have a negative effect on bird species richness. Examining taxonomic order can also affect the species richness depending on if certain groups are more or less affected by the urban college campuses
 
 ### Urbanowicz
 
