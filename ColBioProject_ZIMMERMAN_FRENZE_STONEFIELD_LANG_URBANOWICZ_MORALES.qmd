@@ -2,6 +2,9 @@
 title: "ColBioProject_ZIMMERMAN_FRENZE_STONEFIELD_LANG_URBANOWICZ_MORALES"
 format: html
 editor: visual
+execute: 
+  warning: false
+  message: false
 ---
 
 ## Load Packages
@@ -148,7 +151,7 @@ Ebird |>
 
 #### Tuition & Fees
 
-A more expensive institution may have more opportunities for species richness due to funding opportunities for natural development. However, this higher price may also imply more impervious surface, which is not ideal for species richness, as the money students pay may be funding impervious development, such as academic buidings and roads.
+A more expensive institution may have more opportunities for species richness due to funding opportunities for natural development. However, this higher price may also imply more impervious surface, which is not ideal for species richness, as the money students pay may be funding anthropogenic development, such as academic buidings and roads.
 
 ```{r}
 #| label: A 
