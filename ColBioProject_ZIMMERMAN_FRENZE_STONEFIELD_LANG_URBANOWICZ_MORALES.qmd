@@ -212,9 +212,13 @@ Tuition |>
 
 ### Stonefield
 
-#### Land Grant Status
+#### Mean Species Richness based on Institution's Land Grant Status:
+
+Hypothesis: Land grant universities were established due to a grant program from the federal government to teach agriculture, military tactics, and the mechanic arts as well as classical studies so members of the working classes could obtain a liberal, practical education. Due to this, Land grant universities tend to be in more rural areas, therefor should have a higher mean species richness.
 
 ```{r}
+#| label: Land Grant Status
+#| warning: false
 land_grant_SR <- merged_data |> 
   select(UNITID, INSTNM, mean_species_richness, LANDGRNT)|>
   filter(is.na(mean_species_richness) == FALSE) |>
@@ -229,6 +233,38 @@ land_grant_SR |>
   theme_minimal() +
   scale_fill_manual(values = c("Land Grant" = "green", "Not Land Grant" = "skyblue2"))
 
+```
+
+Impervious surfaces may be more prevalent on non-land-grant institutions so this may be a factor in these results. Taxonomic order breakdown is shown below.
+
+```{r}
+#| label: by taxonomic order
+#| warning: false
+# Faceted by Order
+
+mean_species_richness <- species_richness |> 
+  group_by(UNITID, ORDER) |> 
+  summarise(mean_species_richness = mean(species_count, na.rm = TRUE))
+
+merged_data <- IPEDS |> 
+  left_join(mean_species_richness)
+
+land_grant_SR <- merged_data |> 
+  select(UNITID, INSTNM, mean_species_richness, LANDGRNT, ORDER)|>
+  filter(is.na(mean_species_richness) == FALSE) |>
+  mutate(LANDGRNT = ifelse(LANDGRNT == 1, "Land Grant", "Not")) |> 
+  filter(!is.na(ORDER))
+
+land_grant_SR |>
+  group_by(ORDER) |>
+  ggplot(aes(x = LANDGRNT, y = mean_species_richness)) +
+  geom_boxplot(aes(fill = LANDGRNT)) +
+  labs(title = "Mean Species Richness of Land Grant Universities",
+       x = "Land Grant Status",
+       y = "Mean Species Richness") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Land Grant" = "green", "Not" = "skyblue2")) +
+  facet_wrap(~ORDER)
 ```
 
 ### Lang
